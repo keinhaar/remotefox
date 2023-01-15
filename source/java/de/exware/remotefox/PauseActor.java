@@ -19,7 +19,8 @@ public class PauseActor extends AbstractActor
         , INTERRUPTED
         , BREAKPOINT
         , DEBUGGERSTATEMENT
-	    , RESUME;
+        , RESUME
+        , RESUMELIMIT;
 	    
 	    static PauseType getType(String name)
 	    {

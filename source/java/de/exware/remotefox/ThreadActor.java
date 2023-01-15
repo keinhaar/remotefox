@@ -18,6 +18,26 @@ public class ThreadActor extends AbstractActor
     private boolean attached = false;
 	private PauseActor pauseActor;
     
+    public enum ResumeType
+    {
+        STEP_OVER("next")
+        , STEP_INTO("step")
+        , STEP_OUT("finish")
+        ;
+        private String name;
+
+        ResumeType(String string)
+        {
+            this.name = string;
+        }
+        
+        @Override
+        public String toString()
+        {
+            return name == null ? name().toLowerCase() : name;
+        }
+    }
+
     ThreadActor(DebugConnector con, AbstractActor parent, String actor) throws JSONException, IOException
     {
         super(con, parent, actor);
@@ -138,6 +158,17 @@ public class ThreadActor extends AbstractActor
         JSONObject request = new JSONObject();
         request.put("to", actor);
         request.put("type", "resume");
+        connector.send(request, null);
+    }
+
+    public void resume(ResumeType type) throws IOException, JSONException
+    {
+        JSONObject request = new JSONObject();
+        request.put("to", actor);
+        request.put("type", "resume");
+        JSONObject limitType = new JSONObject();
+        limitType.put("type", type.toString());
+        request.put("resumeLimit", limitType);
         connector.send(request, null);
     }
 

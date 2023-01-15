@@ -8,6 +8,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import de.exware.remotefox.ThreadActor.ResumeType;
 import de.exware.remotefox.event.PauseEvent;
 import de.exware.remotefox.event.PauseListener;
 import de.exware.remotefox.event.ResourceEvent;
@@ -144,6 +145,14 @@ public class TabActor extends AbstractActor
         if(isPaused())
         {
             getThreadActor().resume();
+        }
+    }
+
+    public void resume(ResumeType type) throws IOException, JSONException
+    {
+        if(isPaused())
+        {
+            getThreadActor().resume(type);
         }
     }
 
