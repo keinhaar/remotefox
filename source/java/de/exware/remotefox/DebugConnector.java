@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ public class DebugConnector
     private Map<String, AbstractActor> routingTargets = new HashMap();
     private RootActor root;
     private boolean logWire;
+    private boolean running = false;
     
     public DebugConnector(String host, int port)
     {
@@ -52,8 +54,11 @@ public class DebugConnector
         routingTargets.remove(actorId);
     }
     
-    public void start()
+    public void start() throws UnknownHostException, IOException
     {
+        running = true;
+        connect();
+        readMessage();
         Thread t = new Thread()
         {
             @Override
@@ -61,7 +66,7 @@ public class DebugConnector
             {
                 setName(DebugConnector.class.getSimpleName());
                 super.run();
-                while(true)
+                while(running && socket.isClosed() == false)
                 {
                     try
                     {
@@ -97,14 +102,31 @@ public class DebugConnector
                         }
                         requests.remove(from);
                     }
+                    catch (SocketTimeoutException e)
+                    {
+                    }
                     catch (Exception e)
                     {
-                        e.printStackTrace();
+                        e.printStackTrace();                        
                     }
                 }
+                running = false;
             }
         };
         t.start();
+    }
+    
+    public void stop()
+    {
+        running = false;
+        try
+        {
+            socket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
     
     public RootActor getRootActor()
@@ -118,13 +140,13 @@ public class DebugConnector
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException
     {
-        DebugConnector con = new DebugConnector("127.0.0.1", 39635);
+        DebugConnector con = new DebugConnector("127.0.0.1", 10000);
         con.setLogWire(true);
-        JSONObject welcome = con.readMessage();
-        if(welcome == null)
-        {
-            throw new IOException("No Welcome from Firefox");
-        }
+//        JSONObject welcome = con.readMessage();
+//        if(welcome == null)
+//        {
+//            throw new IOException("No Welcome from Firefox");
+//        }
         con.start();
         RootActor actor = con.getRootActor();
         actor.getRoot();
@@ -174,8 +196,8 @@ public class DebugConnector
         
         Thread.sleep(6000);
         
-        Map<String, Object> vars = tab.getPauseActor().getVariables();
-        System.out.println(vars);
+//        Map<String, Object> vars = tab.getPauseActor().getVariables();
+//        System.out.println(vars);
 
         Thread.sleep(6000);
         
@@ -191,6 +213,7 @@ public class DebugConnector
         {
             socket = new Socket(host, port);
             InputStream in = socket.getInputStream();
+            socket.setSoTimeout(1000);
             bin = new BufferedInputStream(in);
             bout = new BufferedOutputStream(socket.getOutputStream());
             success = true;
@@ -200,7 +223,6 @@ public class DebugConnector
     
     public JSONObject readMessage() throws IOException, JSONException
     {
-        connect();
         JSONObject json = null;
         byte[] buf = new byte[10];
         int by = bin.read();
@@ -250,28 +272,31 @@ public class DebugConnector
 
     void send(JSONObject data, MessageHandler handler) throws IOException, JSONException
     {
-        String to = data.getString("to");
-        while(requests.containsKey(to))
+        if(running)
         {
-            try
+            String to = data.getString("to");
+            while(requests.containsKey(to) && running)
             {
-                Thread.sleep(100);
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                }
             }
-            catch (InterruptedException e)
+            requests.put(to, handler);
+            String packet = data.toString();
+            send(packet);
+            while(requests.containsKey(to) && running)
             {
-            }
-        }
-        requests.put(to, handler);
-        String packet = data.toString();
-        send(packet);
-        while(requests.containsKey(to))
-        {
-            try
-            {
-                Thread.sleep(100);
-            }
-            catch (InterruptedException e)
-            {
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch (InterruptedException e)
+                {
+                }
             }
         }
     }
