@@ -150,8 +150,13 @@ public class WatcherActor extends AbstractActor
         {
             watchTargets();
         }
+        long start = System.currentTimeMillis();
         while(threadActor == null)
         {
+            if(start + 3000 < System.currentTimeMillis())
+            {
+                throw new IOException("Could not get ThreadActor.");
+            }
             try
             {
                 Thread.sleep(10);

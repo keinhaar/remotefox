@@ -140,7 +140,7 @@ public class DebugConnector
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException
     {
-        DebugConnector con = new DebugConnector("127.0.0.1", 10000);
+        DebugConnector con = new DebugConnector("127.0.0.1", 40155);
         con.setLogWire(true);
 //        JSONObject welcome = con.readMessage();
 //        if(welcome == null)
@@ -188,16 +188,17 @@ public class DebugConnector
 //        
 //        tab.setBreakpoint("file:///D:/temp/loeschmich/test.js", 5, 8);
 //      tab.setBreakpoint("file:///daten/develop/sdbg_workspace/test.js", 5, 8);
-        tab.setBreakpoint("http://localhost:8888/tt-0.js", 35903, 2);
+        tab.setBreakpoint("http://localhost:8888/tt-0.js", 25707, 2);
 //        tab.addEventBreakpoints("event.mouse.click");
         tab.resume();
         
-        List<SourceActor> sactors = tab.getSourceActors();
-        
         Thread.sleep(6000);
         
-//        Map<String, Object> vars = tab.getPauseActor().getVariables();
-//        System.out.println(vars);
+        Map<String, Object> vars = tab.getPauseActor().getVariables();
+        System.out.println(vars);
+        
+        Map<String, Object> map = tab.getPauseActor().getStackFrames().get(0).getThis().getProperties();
+        System.out.println(map);
 
         Thread.sleep(6000);
         

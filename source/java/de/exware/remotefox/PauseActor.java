@@ -49,7 +49,7 @@ public class PauseActor extends AbstractActor
      */
     public Map<String, Object> getVariables() throws JSONException, IOException
     {
-        StackFrameActor actor = new StackFrameActor(connector, this, conf.getJSONObject("/frame"));
+        StackFrameActor actor = new StackFrameActor(connector, this, conf.getJSONObject("frame"));
     	return actor.getEnvironmentActor().getVariables();
     }
     

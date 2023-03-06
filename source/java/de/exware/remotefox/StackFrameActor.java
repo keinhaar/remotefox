@@ -9,6 +9,7 @@ import org.json.JSONObject;
 public class StackFrameActor extends AbstractActor
 {
     private EnvironmentActor environmentActor;
+    private ObjectActor thisActor;
     
     public StackFrameActor(DebugConnector con, AbstractActor parent, JSONObject conf) throws JSONException
     {
@@ -63,5 +64,14 @@ public class StackFrameActor extends AbstractActor
             );
         }
         return environmentActor;
+    }
+    
+    public ObjectActor getThis()
+    {
+        if(thisActor == null)
+        {
+            thisActor = new ObjectActor(connector, this, conf.getJSONObject("this"));
+        }
+        return thisActor;
     }
 }

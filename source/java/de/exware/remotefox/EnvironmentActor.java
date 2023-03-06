@@ -36,17 +36,7 @@ public class EnvironmentActor extends AbstractActor
     {
         Map<String, Object> variables = new HashMap<>();
         JSONObject vars = (JSONObject) conf.optQuery("/bindings/variables");
-        for(String key : vars.keySet())
-        {
-            if("arguments".equals(key))
-            {
-                continue;
-            }
-            JSONObject jsObject = vars.getJSONObject(key);
-            Object value = jsObject.opt("value");
-            value = value instanceof JSONObject ? "Object" : value;
-            variables.put(key, value);
-        }
+        PropertyIteratorActor.varsToMap(connector, this, vars, variables);
         return variables;
     }
 
@@ -55,13 +45,7 @@ public class EnvironmentActor extends AbstractActor
         Map<String, Object> variables = new HashMap<>();
         JSONArray arr = (JSONArray) conf.optQuery("/bindings/arguments");
         JSONObject vars = arr.getJSONObject(0);
-        for(String key : vars.keySet())
-        {
-            JSONObject jsObject = vars.getJSONObject(key);
-            Object value = jsObject.opt("value");
-            value = value instanceof JSONObject ? "Object" : value;
-            variables.put(key, value);
-        }
+        PropertyIteratorActor.varsToMap(connector, this, vars, variables);
         return variables;
     }
 }
