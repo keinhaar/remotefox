@@ -14,9 +14,13 @@ import de.exware.remotefox.event.PauseListener;
 import de.exware.remotefox.event.ResourceEvent;
 import de.exware.remotefox.event.ResourceListener;
 
+/**
+ * This is the main Actor for most use cases. Internally some methods are mapped to other Actors,
+ * but for simpler usage some methods are defined here as shortcuts.
+ * for example: isPaused(), interrupt(), evaluate(), navigateTo()...
+ */
 public class TabActor extends AbstractActor
 {
-    private ConsoleActor console;
     private JSONObject frame;
     private WatcherActor watcher;
     private List<PauseListener> pauseListeners = new ArrayList<>();
@@ -78,15 +82,10 @@ public class TabActor extends AbstractActor
 
     public ConsoleActor getConsole() throws JSONException, IOException
     {
-        getTarget();
-        if(console == null)
-        {
-            console = new ConsoleActor(connector, this, frame.getString("consoleActor"));
-        }
-        return console;
+        return getWatcher().getConsoleActor();
     }
     
-    private ThreadActor getThreadActor() throws JSONException, IOException
+    ThreadActor getThreadActor() throws JSONException, IOException
     {
         getWatcher();
         return watcher.getThreadActor();
@@ -102,6 +101,11 @@ public class TabActor extends AbstractActor
         getThreadActor().attach();
     }
     
+    /**
+     * Pauses the Thread. 
+     * @throws JSONException
+     * @throws IOException
+     */
     public void interrupt() throws JSONException, IOException
     {
         if(isPaused() == false)
@@ -109,7 +113,58 @@ public class TabActor extends AbstractActor
             getThreadActor().interrupt();
         }
     }
+
+    /**
+     * Allows evaluation of JavaScript Expressions in the context of the current StackFrame.
+     * Will automatically pause the Thread, if it is not already paused.
+     * @param expression A JavaScript Expression like "x=1", which would return 1.
+     * @return The result of the Expression. The Type depends on the Expression. "x=1" returns the Integer 1. 
+     *  "x='ABC'" returns a String
+     * @throws Exception throws an Exception if the JavaScript could not be evaluated.
+     */
+    public Object evaluate(String expression) throws Exception
+    {
+        if(isPaused() == false)
+        {
+            getThreadActor().interrupt();
+        }
+        ConsoleActor console = getWatcher().getConsoleActor();
+        JSONObject request = new JSONObject();
+        request.put("frameActor", getPauseActor().conf.query("/frame/actor"));
+        request.put("to", console.getActorId());
+        request.put("type", "evaluateJSAsync");
+        request.put("text", expression);
+        String[] resultID = new String[1];
+        connector.send(request, message ->
+        {
+            resultID[0] = message.getString("resultID");
+        });        
+        Object result = console.getEvaluationResult(resultID[0]);
+        while(result == null)
+        {
+            result = console.getEvaluationResult(resultID[0]);
+        }
+        if(result instanceof JSONObject)
+        {
+            JSONObject obj = (JSONObject) result;
+            if(obj.get("type").equals("null"))
+            {
+                result = null;
+            }
+        }
+        if(result instanceof Exception)
+        {
+            throw (Exception)result;
+        }
+        return result;
+    }
     
+    /**
+     * Checks is the Tab is currently paused.
+     * @return true if the tab is paused.
+     * @throws JSONException
+     * @throws IOException
+     */
     public boolean isPaused() throws JSONException, IOException
     {
         return getThreadActor().getPauseActor() != null;
@@ -120,13 +175,35 @@ public class TabActor extends AbstractActor
         getThreadActor().removeBreakpoint(url, line, column);
     }
     
+    /**
+     * Sets a Breakpoint on the given JavaScript URL on Line "line" and Column "column".
+     * Please note, that setting a breakpoint on column 0 will not work, if there  a whitespaces at the beginning of the line.
+     * @param url The URL for the JavaScript file
+     * @param line 
+     * @param column
+     * @throws JSONException
+     * @throws IOException
+     */
     public void setBreakpoint(String url, int line, int column) throws JSONException, IOException
     {
-        getThreadActor().setBreakpoint(url, line, column);
+        setBreakpoint(url, line, column, null);
     }
     
+    /**
+     * Sets a Breakpoint on the given JavaScript URL on Line "line" and Column "column".
+     * Please note, that setting a breakpoint on column 0 will not work, if there  a whitespaces at the beginning of the line.
+     * @param url The URL for the JavaScript file
+     * @param line 
+     * @param column
+     * @throws JSONException
+     * @throws IOException
+     */
     public void setBreakpoint(String url, int line, int column, Map<String, String> options) throws JSONException, IOException
     {
+        if(isPaused() == false)
+        {
+            throw new IOException("Thread is not paused. Call interrupt() before setting breakpoints");
+        }
         getThreadActor().setBreakpoint(url, line, column, options);
     }
     

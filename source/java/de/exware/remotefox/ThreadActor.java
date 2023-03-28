@@ -85,7 +85,7 @@ public class ThreadActor extends AbstractActor
             request.put("type", "attach");
             Map<String, Object> options = new HashMap();
             options.put("pauseOnExceptions", false);
-            options.put("ignoreCaughtExeptions", true);
+            options.put("ignoreCaughtExeptions", false);
             options.put("shouldShowOverlay", true); //if true, firefox shows that a breakpoint was hit, and allows to resume
             options.put("shouldIncludeSavedFrames", true);
             options.put("shouldIncludeAsyncLiveFrames", false);
@@ -231,5 +231,28 @@ public class ThreadActor extends AbstractActor
 	{
 		return pauseActor;
 	}
+
+    public List<StackFrameActor> getStackFrames() throws IOException, JSONException
+    {
+        List<StackFrameActor> stackFrames = new ArrayList<>();
+        JSONObject request = new JSONObject();
+        request.put("to", getActorId());
+        request.put("type", "frames");
+        request.put("start", 0);
+        request.put("count", 100);
+        request.put("options", new String[0]);
+        connector.send(request, message ->
+        {
+            JSONArray array = message.getJSONArray("frames");
+            for(int i=0;i<array.length();i++)
+            {
+                JSONObject jsonFrame = array.getJSONObject(i);
+                StackFrameActor actor = new StackFrameActor(connector, this, jsonFrame);
+                stackFrames.add(actor);
+            }
+        }
+        );
+        return stackFrames;
+    }
 
 }

@@ -1,18 +1,14 @@
 package de.exware.remotefox;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PauseActor extends AbstractActor
 {
-	private List<StackFrameActor> stackFrames;
-	
 	public enum PauseType
 	{
         UNKNOWN
@@ -79,27 +75,8 @@ public class PauseActor extends AbstractActor
         
     public List<StackFrameActor> getStackFrames() throws IOException, JSONException
     {
-        if(stackFrames == null)
-        {
-            stackFrames = new ArrayList<>();
-            JSONObject request = new JSONObject();
-            request.put("to", getParent(ThreadActor.class).getActorId());
-            request.put("type", "frames");
-            request.put("start", 0);
-            request.put("count", 100);
-            request.put("options", new String[0]);
-            connector.send(request, message ->
-            {
-                JSONArray array = message.getJSONArray("frames");
-                for(int i=0;i<array.length();i++)
-                {
-                    JSONObject jsonFrame = array.getJSONObject(i);
-                    StackFrameActor actor = new StackFrameActor(connector, this, jsonFrame);
-                    stackFrames.add(actor);
-                }
-            }
-            );
-        }
+        ThreadActor tactor = getParent(ThreadActor.class);
+        List<StackFrameActor> stackFrames = tactor.getStackFrames();
         return stackFrames;
     }
 }

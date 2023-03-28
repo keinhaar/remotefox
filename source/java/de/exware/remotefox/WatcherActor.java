@@ -12,6 +12,7 @@ public class WatcherActor extends AbstractActor
     private ThreadActor threadActor;
     private ThreadConfigurationActor threadConfigurationActor;
     private WindowGlobalActor windowActor;
+    private ConsoleActor consoleActor;
     private boolean isWatching;
     
     public enum WatchableResource
@@ -64,6 +65,7 @@ public class WatcherActor extends AbstractActor
             }
             threadActor = new ThreadActor(connector, this, target.getString("threadActor"));
             windowActor = new WindowGlobalActor(connector, this, target.getString("actor"));
+            consoleActor = new ConsoleActor(connector, this, target.getString("consoleActor"));
             return;
         }
     }
@@ -72,11 +74,13 @@ public class WatcherActor extends AbstractActor
     {
         close(threadActor);
         close(windowActor);
+        close(consoleActor);
         close(breakpointListActor);
         close(targetConfigurationActor);
         close(threadConfigurationActor);
         threadActor = null;
         windowActor = null;
+        consoleActor = null;
         breakpointListActor = null;
         targetConfigurationActor = null;
         threadConfigurationActor = null;
@@ -86,6 +90,8 @@ public class WatcherActor extends AbstractActor
     {
         return getParent(TabActor.class);
     }
+    
+    
     
     public BreakpointListActor getBreakpointListActor() throws IOException, JSONException
     {
@@ -142,6 +148,11 @@ public class WatcherActor extends AbstractActor
         request.put("type", "watchResources");
         request.put("resourceTypes", arrayToString(resourceTypes));
         connector.send(request, null);
+    }
+    
+    public ConsoleActor getConsoleActor()
+    {
+        return consoleActor;
     }
     
     public ThreadActor getThreadActor() throws IOException, JSONException

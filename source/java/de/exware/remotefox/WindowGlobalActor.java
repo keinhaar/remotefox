@@ -35,9 +35,12 @@ public class WindowGlobalActor extends AbstractActor
                 String rtype = resource.getString("resourceType");
                 if(WatchableResource.SOURCE.toString().equals(rtype))
                 {
-                    SourceActor sourceActor = new SourceActor(connector, this, resource);
-                    sourceActors.add(sourceActor);
-                    getTabActor().fireSourceAvailable(new ResourceEvent(getTabActor(), WatchableResource.SOURCE));
+                    if("scriptElement".equals(resource.optString("introductionType")))
+                    {
+                        SourceActor sourceActor = new SourceActor(connector, this, resource);
+                        sourceActors.add(sourceActor);
+                        getTabActor().fireSourceAvailable(new ResourceEvent(getTabActor(), WatchableResource.SOURCE));
+                    }
                 }
                 if(WatchableResource.DOCUMENT_EVENT.toString().equals(rtype))
                 {
