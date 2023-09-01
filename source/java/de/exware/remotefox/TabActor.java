@@ -271,6 +271,22 @@ public class TabActor extends AbstractActor
         return getWatcher().getWindowGlobalActor().getSourceActors();
     }
     
+    public SourceActor getSourceActor(String url) throws JSONException, IOException
+    {
+        SourceActor ret = null;
+        List<SourceActor> actors = getWatcher().getWindowGlobalActor().getSourceActors();
+        for(int i=0;i<actors.size();i++)
+        {
+            SourceActor actor = actors.get(i);
+            if(actor.getURL().equals(url))
+            {
+                ret = actor;
+                break;
+            }
+        }
+        return ret;
+    }
+    
     public void addPauseListener(PauseListener listener)
     {
         if(pauseListeners.contains(listener) == false)
