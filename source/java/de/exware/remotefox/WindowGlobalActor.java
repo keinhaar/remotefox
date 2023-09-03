@@ -39,7 +39,7 @@ public class WindowGlobalActor extends AbstractActor
                     {
                         SourceActor sourceActor = new SourceActor(connector, this, resource);
                         sourceActors.add(sourceActor);
-                        getTabActor().fireSourceAvailable(new ResourceEvent(getTabActor(), WatchableResource.SOURCE));
+                        getTabActor().fireSourceAvailable(new ResourceEvent(getTabActor(), sourceActor, WatchableResource.SOURCE));
                     }
                 }
                 if(WatchableResource.DOCUMENT_EVENT.toString().equals(rtype))
